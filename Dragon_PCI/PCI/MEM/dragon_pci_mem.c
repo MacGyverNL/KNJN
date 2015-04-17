@@ -53,7 +53,7 @@ struct dragon_pci_mem_struct {
   struct pci_dev	*dev; /* PCI device */
   int			minor; /* Minor number */
   void __iomem *	mmio[DEVICE_COUNT_RESOURCE];
-  u32			mmio_len[DEVICE_COUNT_RESOURCE];
+  u64			mmio_len[DEVICE_COUNT_RESOURCE];
 };
 
 /*
@@ -77,7 +77,8 @@ struct dragon_pci_mem_struct {
  */
 static ssize_t dragon_pci_mem_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
-  int i, real, bank = DEVICE_COUNT_RESOURCE;
+  u64 real;
+  int i, bank = DEVICE_COUNT_RESOURCE;
   struct dragon_pci_mem_struct *data = file->private_data;
 
   /* Find the first remapped I/O memory bank to read */
@@ -95,15 +96,18 @@ static ssize_t dragon_pci_mem_read(struct file *file, char *buf, size_t count, l
   }
 
   /* Check for overflow */
-  real = min(data->mmio_len[bank] - (int)*ppos, count);
+  real = min(data->mmio_len[bank] - (u64)*ppos, (u64)count);
 
   /* Copy data from board */
-  if (real)
-    if (copy_to_user((void __user *)buf, (void *)data->mmio[bank] + (int)*ppos, real))
+  if (real) {
+    memcpy_fromio((void __user *)buf, (void *)data->mmio[bank] + *ppos, real);
+    /*if (copy_to_user((void __user *)buf, (void *)data->mmio[bank] + (int)*ppos, real)) {
       return -EFAULT;
+    }*/
+  }
 
   if (debug)
-    printk(KERN_INFO "dragon_pci_mem: read %d/%zd chars at offset %d from remapped I/O memory bank %d\n", real, count, (int)*ppos, bank);
+    printk(KERN_INFO "dragon_pci_mem: read %lld/%zd chars at offset %lld from remapped I/O memory bank %d\n", real, count, (u64)*ppos, bank);
 
   *ppos += real;
 
