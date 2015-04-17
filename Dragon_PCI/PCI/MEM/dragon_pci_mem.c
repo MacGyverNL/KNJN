@@ -103,7 +103,7 @@ static ssize_t dragon_pci_mem_read(struct file *file, char *buf, size_t count, l
       return -EFAULT;
 
   if (debug)
-    printk(KERN_INFO "dragon_pci_mem: read %d/%d chars at offset %d from remapped I/O memory bank %d\n", real, count, (int)*ppos, bank);
+    printk(KERN_INFO "dragon_pci_mem: read %d/%zd chars at offset %d from remapped I/O memory bank %d\n", real, count, (int)*ppos, bank);
 
   *ppos += real;
 
@@ -140,7 +140,7 @@ static ssize_t dragon_pci_mem_write(struct file *file, const char *buf, size_t c
       return -EFAULT;
 
   if (debug)
-    printk(KERN_INFO "dragon_pci_mem: wrote %d/%d chars at offset %d to remapped I/O memory bank %d\n", real, count, (int)*ppos, bank);
+    printk(KERN_INFO "dragon_pci_mem: wrote %d/%zd chars at offset %d to remapped I/O memory bank %d\n", real, count, (int)*ppos, bank);
 
   *ppos += real;
 
@@ -255,7 +255,7 @@ static int dragon_pci_mem_probe(struct pci_dev *dev, const struct pci_device_id 
       goto cleanup_ioremap;
     }
     data->mmio_len[i] = pci_resource_len(dev, i);
-    printk(KERN_INFO "dragon_pci_mem: I/O memory has been remapped at %#08x\n", (u32)data->mmio[i]);
+    printk(KERN_INFO "dragon_pci_mem: I/O memory has been remapped at %p\n", data->mmio[i]);
   }
 
   /* Install the irq handler */
@@ -299,9 +299,9 @@ static void dragon_pci_mem_remove(struct pci_dev *dev)
 
   for (i = 0 ; i < DEVICE_COUNT_RESOURCE ; i++) {
     if (data->mmio[i] != NULL) {
-      printk(KERN_INFO "dragon_pci_mem: unmapping region %x\n", data->mmio[i]);
+      printk(KERN_INFO "dragon_pci_mem: unmapping region %p\n", data->mmio[i]);
       pci_iounmap(dev, data->mmio[i]);
-      printk(KERN_INFO "dragon_pci_mem: unmapped region %x\n", data->mmio[i]);
+      printk(KERN_INFO "dragon_pci_mem: unmapped region %p\n", data->mmio[i]);
     }
   }
 
