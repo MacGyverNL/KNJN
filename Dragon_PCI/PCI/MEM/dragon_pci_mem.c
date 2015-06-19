@@ -83,6 +83,10 @@ static ssize_t dragon_pci_mem_read(struct file *file, char *buf, size_t count, l
   // u32 __user * wbuf = (u32 __user *) buf; // Buffer used when opting for the second option in the copy
                                              // block below.
 
+  if(debug) {
+    printk(KERN_INFO "dragon_pci_mem: dragon_pci_mem_read() called with buf at %p, count %zd, offset %lld\n", buf, count, *ppos);
+  }
+
   /* Find the first remapped I/O memory bank to read */
   for (i = 0; i < DEVICE_COUNT_RESOURCE; i++) {
     if (data->mmio[i] != 0) {
@@ -108,7 +112,7 @@ static ssize_t dragon_pci_mem_read(struct file *file, char *buf, size_t count, l
 
     // Another option, but only works for 4-byte-aligned reads. Requires *ppos += real; to be commented out.
     // Also throws off the KERN_INFO printk since *ppos is updated live.
-    // Also requires return real = i.
+    // Also requires return real - i.
     //
     //for (i = real; i > 0; ++wbuf, *ppos+=4, i-=4) {
     //  *wbuf = ioread32((void __iomem *) (data->mmio[bank] + *ppos));
@@ -132,6 +136,10 @@ static ssize_t dragon_pci_mem_write(struct file *file, const char *buf, size_t c
   const u32 __user * rbuf = (const u32 __user *) buf;
   u32 tmp = 0;
 
+  if(debug) {
+    printk(KERN_INFO "dragon_pci_mem: dragon_pci_mem_write() called with buf at %p, count %zd, offset %lld\n", buf, count, *ppos);
+  }
+
   /* Find the first remapped I/O memory bank to read */
   for (i = 0; i < DEVICE_COUNT_RESOURCE; i++) {
     if (data->mmio[i] != 0) {
@@ -154,6 +162,7 @@ static ssize_t dragon_pci_mem_write(struct file *file, const char *buf, size_t c
     for (i = real; i > 3; ++rbuf, *ppos+=4, i-=4) {
       iowrite32(*rbuf, (void __iomem *) (data->mmio[bank] + *ppos));
     }
+    // Handle non-4-byte-aligned data:
     if (i > 0) {
       memcpy(&tmp, rbuf, i);
       iowrite32(tmp, (void __iomem *) (data->mmio[bank] + *ppos));
@@ -175,7 +184,7 @@ static int dragon_pci_mem_open(struct inode *inode, struct file *file)
   struct dragon_pci_mem_struct *data;
 
   if (debug)
-    printk("dragon_pci_mem_open()\n");
+    printk("dragon_pci_mem: dragon_pci_mem_open()\n");
 
   list_for_each(cur, &dragon_pci_mem_list) {
     data = list_entry(cur, struct dragon_pci_mem_struct, link);
@@ -195,7 +204,7 @@ static int dragon_pci_mem_open(struct inode *inode, struct file *file)
 static int dragon_pci_mem_release(struct inode *inode, struct file *file)
 {
   if (debug)
-    printk("dragon_pci_mem_release()\n");
+    printk("dragon_pci_mem: dragon_pci_mem_release()\n");
 
   file->private_data = NULL;
 

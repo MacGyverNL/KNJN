@@ -5,7 +5,7 @@ PWD= $(shell pwd)
 obj-m := dragon_pci_mem.o
 
 all:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) -Wall -Wextra modules
 
 install:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules_install
